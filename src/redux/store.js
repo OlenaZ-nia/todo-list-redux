@@ -1,21 +1,45 @@
-import { createStore, combineReducers } from 'redux';
-// import { applyMiddleware } from 'redux';
-import { composeWithDevTools } from 'redux-devtools-extension';
+import { configureStore } from '@reduxjs/toolkit';
+import logger from 'redux-logger';
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER, } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
 import counterReducer from './counter/counter-reducer';
 import todosReducer from './todos/todos-reducer';
 
-const rootReducer = combineReducers({
-  counter: counterReducer,
-  todos: todosReducer,
+const todosPersistConfig = {
+  key: 'rootTodos',
+  storage,
+  blacklist: ['filter'],
+}
+
+// const rootReducer = combineReducers({
+//   counter: counterReducer,
+//   todos: todosReducer,
+// });
+
+// const store = createStore(rootReducer, composeWithDevTools());
+const store = configureStore({
+  reducer: {
+    todos: persistReducer(todosPersistConfig, todosReducer),
+    counter: counterReducer,
+},
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+    serializableCheck: {
+      ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+    },
+  }).concat(logger),
+  devTools: process.env.NODE_ENV==='development',
 });
 
-const store = createStore(rootReducer, composeWithDevTools());
+const persistor = persistStore(store);
 
-export default store;
+export default {store, persistor};
 
-// const reducer = (state = {}, action) => {
-//   return state
-// };
 
-// const store = createStore(reducer);
-// export default store;
